@@ -1,0 +1,42 @@
+name: Build Hive Standalone Metastore Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      hive_metastore_version:
+        description: "Hive Metastore version"
+        required: true
+        default: "3.0.0"
+      hadoop_version:
+        description: "Hadoop version"
+        required: true
+        default: "3.3.1"
+      postgres_connector_version:
+        description: "Postgres connector version"
+        required: true
+        default: "42.3.1"
+
+jobs:
+  publish_docker:
+    name: "Build and publish container image for Hive standalone metastore ${{ github.event.inputs.hive_metastore_version }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./hive-metastore
+          build-args:
+            - "HIVE_METASTORE_VERSION=${{ github.event.inputs.hive_metastore_version }}"
+            - "HADOOP_VERSION=${{ github.event.inputs.hadoop_version }}"
+            - "POSTGRES_CONNECTOR_VERSION=${{ github.event.inputs.postgres_connector_version }}"
+          tags: ghcr.io/${{ github.repository }}/hive-metastore:${{ github.event.inputs.hive_metastore_version }}-hadoop${{ github.event.inputs.hadoop_version }}
+          push: true
