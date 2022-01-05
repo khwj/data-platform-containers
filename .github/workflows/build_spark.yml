@@ -4,92 +4,91 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Spark release e.g. 3.2.0'
+        description: "Spark release e.g. 3.2.0"
         required: true
-        default: '3.2.0'
+        default: "3.2.0"
       jdk_version:
-        description: 'JDK version: 8, 11 or 17'
+        description: "JDK version: 8, 11 or 17"
         required: true
-        default: '11'
+        default: "11"
       jdk_dist:
-        description: 'JDK distribution: adopt-hotspot, adopt-openj9 or zulu'
+        description: "JDK distribution: adopt-hotspot, adopt-openj9 or zulu"
         required: true
-        default: 'adopt-hotspot'
+        default: "adopt-hotspot"
       scala_Version:
-        default: '2.12'
+        default: "2.12"
         required: true
 
 jobs:
   publish_docker:
-    name: "Build and publish Docker image for Spark${{ github.event.inputs.release }} without Hadoop"
+    name: "Build and publish container image for Spark${{ github.event.inputs.release }} without Hadoop"
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: apache/spark
+          fetch-depth: 0
+          ref: refs/tags/v${{ github.event.inputs.release }}
 
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        repository: apache/spark
-        fetch-depth: 0
-        ref: refs/tags/v${{ github.event.inputs.release }}
+      - name: Cache Scala, SBT and Maven
+        uses: actions/cache@v2
+        with:
+          path: |
+            build/apache-maven-*
+            build/scala-*
+            build/*.jar
+            ~/.sbt
+          key: build-${{ hashFiles('**/pom.xml', 'project/build.properties', 'build/mvn', 'build/sbt', 'build/sbt-launch-lib.bash', 'build/spark-build-info') }}
+          restore-keys: |
+            build-
 
-    - name: Cache Scala, SBT and Maven
-      uses: actions/cache@v2
-      with:
-        path: |
-          build/apache-maven-*
-          build/scala-*
-          build/*.jar
-          ~/.sbt
-        key: build-${{ hashFiles('**/pom.xml', 'project/build.properties', 'build/mvn', 'build/sbt', 'build/sbt-launch-lib.bash', 'build/spark-build-info') }}
-        restore-keys: |
-          build-
+      - name: Cache Coursier local repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier
+          key: benchmark-coursier-${{ github.event.inputs.jdk_version }}-${{ hashFiles('**/pom.xml', '**/plugins.sbt') }}
+          restore-keys: |
+            benchmark-coursier-${{ github.event.inputs.jdk_version }}
 
-    - name: Cache Coursier local repository
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/coursier
-        key: benchmark-coursier-${{ github.event.inputs.jdk_version }}-${{ hashFiles('**/pom.xml', '**/plugins.sbt') }}
-        restore-keys: |
-          benchmark-coursier-${{ github.event.inputs.jdk_version }}
+      - name: Set up JDK ${{ github.event.inputs.jdk_version }}-${{ github.event.inputs.jdk_dist }}
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ github.event.inputs.jdk_version }}
+          distribution: ${{ github.event.inputs.jdk_dist }}
+          cache: maven
 
-    - name: Set up JDK ${{ github.event.inputs.jdk_version }}-${{ github.event.inputs.jdk_dist }}
-      uses: actions/setup-java@v2
-      with:
-        java-version: ${{ github.event.inputs.jdk_version }}
-        distribution: ${{ github.event.inputs.jdk_dist }}
-        cache: maven
+      - name: Build package
+        env:
+          MAVEN_OPTS: "-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g"
+        run: |
+          ./build/mvn \
+            -Pscala${{ github.event.inputs.scala_version }} \
+            -Phive \
+            -Phive-thriftserver \
+            -Pkubernetes \
+            -DskipTests \
+            package
 
-    - name: Build package
-      env:
-        MAVEN_OPTS: "-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g"
-      run: |
-        ./build/mvn \
-          -Pscala${{ github.event.inputs.scala_version }} \
-          -Phive \
-          -Phive-thriftserver \
-          -Pkubernetes \
-          -DskipTests \
-          package
+      - name: Build a runnable distribution
+        env:
+          MAVEN_OPTS: "-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g"
+        run: |
+          ./dev/make-distribution.sh \
+            --name spark-${{ github.event.inputs.release }} \
+            -Phive \
+            -Phive-thriftserver \
+            -Pkubernetes
 
-    - name: Build a runnable distribution
-      env:
-        MAVEN_OPTS: "-Xss64m -Xmx2g -XX:ReservedCodeCacheSize=1g"
-      run: |
-        ./dev/make-distribution.sh \
-          --name spark-${{ github.event.inputs.release }} \
-          -Phive \
-          -Phive-thriftserver \
-          -Pkubernetes
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v1
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker images
+        run: ./dist/bin/docker-image-tool.sh -r ghcr.io/${{ github.repository }} -t ${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }} build
 
-    - name: Build Docker images
-      run: ./dist/bin/docker-image-tool.sh -r ghcr.io/${{ github.repository }} -t ${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }} build
-
-    - name: Publish Docker images
-      run: docker push ghcr.io/${{ github.repository }}/spark:${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }}
+      - name: Publish Docker images
+        run: docker push ghcr.io/${{ github.repository }}/spark:${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }}

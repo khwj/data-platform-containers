@@ -1,0 +1,38 @@
+name: Build Spark Container Image with AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      spark_image:
+        description: "Spark base image"
+        required: true
+        default: "ghcr.io/khwj/data-platform-containers/spark:3.2.0-hive2.3.9-java11-scala2.12"
+      hadoop_version:
+        description: "Hadoop version"
+        required: true
+        default: "3.3.1"
+
+jobs:
+  publish_docker:
+    name: "Build and publish container image"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./spark
+          file: ./spark/Dockerfile.aws
+          build-args: |
+            "SPARK_IMAGE=${{ github.event.inputs.spark_image }}"
+            "HADOOP_VERSION=${{ github.event.inputs.hadoop_version }}"
+          tags: ${{ github.event.inputs.spark_image }}-hadoopaws${{ github.event.inputs.hadoop_version }}
+          push: true

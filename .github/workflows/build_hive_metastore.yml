@@ -34,9 +34,9 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: ./hive-metastore
-          build-args:
-            - "HIVE_METASTORE_VERSION=${{ github.event.inputs.hive_metastore_version }}"
-            - "HADOOP_VERSION=${{ github.event.inputs.hadoop_version }}"
-            - "POSTGRES_CONNECTOR_VERSION=${{ github.event.inputs.postgres_connector_version }}"
+          build-args: |
+            "HIVE_METASTORE_VERSION=${{ github.event.inputs.hive_metastore_version }}"
+            "HADOOP_VERSION=${{ github.event.inputs.hadoop_version }}"
+            "POSTGRES_CONNECTOR_VERSION=${{ github.event.inputs.postgres_connector_version }}"
           tags: ghcr.io/${{ github.repository }}/hive-metastore:${{ github.event.inputs.hive_metastore_version }}-hadoop${{ github.event.inputs.hadoop_version }}
           push: true
