@@ -1,4 +1,4 @@
-name: Build Polynote Container Image
+name: Polynote with Spark and Hadoop
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ on:
 
 jobs:
   publish_docker:
-    name: "Build and publish container image for Hive standalone metastore ${{ github.event.inputs.hive_metastore_version }}"
+    name: "Build ghcr.io/khwj/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}-hadoop${{ github.event.inputs.hadoop_version }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -46,5 +46,5 @@ jobs:
           build-args: |
             "POLYNOTE_IMAGE"=ghcr.io/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}
             "SPARK_IMAGE"=ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_version }}-hive2.3.9-scala{{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}-hadoop${{ github.event.inputs.hadoop_version }}
-          tags: ghcr.io/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}-hadoop${{ github.event.inputs.hadoop_version }}
+          tags: ghcr.io/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}-spark${{ github.event.inputs.spark_version }}-hadoop${{ github.event.inputs.hadoop_version }}
           push: true

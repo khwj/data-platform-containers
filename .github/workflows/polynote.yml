@@ -1,4 +1,4 @@
-name: Build Polynote Container Image
+name: Polynote
 
 on:
   workflow_dispatch:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   publish_docker:
-    name: "Build and publish container image for Hive standalone metastore ${{ github.event.inputs.hive_metastore_version }}"
+    name: "Build ghcr.io/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -38,5 +38,5 @@ jobs:
             "POLYNOTE_VERSION=${{ github.event.inputs.polynote_version }}"
             "SCALA_VERSION=${{ github.event.inputs.scala_version }}"
             "JDK_VERSION=${{ github.event.inputs.jdk_version }}"
-          tags: ghcr.io/${{ github.repository }}/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}
+          tags: ghcr.io/khwj/data-platform-containers/polynote:${{ github.event.inputs.polynote_version }}-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}
           push: true

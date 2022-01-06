@@ -1,4 +1,4 @@
-name: Build Spark Container Image
+name: Spark
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ on:
 
 jobs:
   publish_docker:
-    name: "Build and publish container image for Spark${{ github.event.inputs.release }} without Hadoop"
+    name: "Build ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.release }}-hive2.3.9-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -88,7 +88,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker images
-        run: ./dist/bin/docker-image-tool.sh -r ghcr.io/${{ github.repository }} -t ${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }} build
+        run: ./dist/bin/docker-image-tool.sh -r ghcr.io/khwj/data-platform-containers -t ${{ github.event.inputs.release }}-hive2.3.9-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }} build
 
       - name: Publish Docker images
-        run: docker push ghcr.io/${{ github.repository }}/spark:${{ github.event.inputs.release }}-hive2.3.9-java${{ github.event.inputs.jdk_version }}-scala${{ github.event.inputs.scala_version }}
+        run: docker push ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.release }}-hive2.3.9-scala${{ github.event.inputs.scala_version }}-jdk${{ github.event.inputs.jdk_version }}
