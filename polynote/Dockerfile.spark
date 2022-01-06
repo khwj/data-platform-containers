@@ -1,0 +1,14 @@
+ARG SPARK_IMAGE=ghcr.io/khwj/data-platform-containers/spark:3.2.0-hive2.3.9-scala2.12-jdk11-hadoop3.3.1
+ARG POLYNOTE_IMAGE=ghcr.io/khwj/data-platform-containers/polynote:0.4.4-scala2.12-jdk11
+FROM $SPARK_IMAGE as spark
+
+FROM $POLYNOTE_IMAGE
+COPY --from=spark /opt/spark /opt/spark
+COPY --from=spark /opt/hadoop-3.3.1 /opt/hadoop
+
+ENV SPARK_HOME="/opt/spark"
+ENV HADOOP_HOME="/opt/hadoop"
+ENV HADOOP_CLASSPATH="${HADOOP_HOME}/share/hadoop/tools/lib/*:"
+ENV PATH="${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${HADOOP_HOME}/bin:${HADOOP_HOME}/share/hadoop/tools/lib/:${PATH}"
+
+RUN export SPARK_DIST_CLASSPATH="$(${HADOOP_HOME}/bin/hadoop classpath)"
