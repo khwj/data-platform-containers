@@ -1,0 +1,42 @@
+name: Spark Operator
+
+on:
+  workflow_dispatch:
+    inputs:
+      operator_version:
+        description: "Spark operator version"
+        required: true
+        default: "v1beta2-1.2.2-3.0.0"
+      spark_image_tag:
+        description: "Spark base image tag"
+        required: true
+        default: "3.2.0-hive2.3.9-java11-scala2.12-jdk11-hadoop3.3.1"
+
+jobs:
+  publish_docker:
+    name: "Build ghcr.io/khwj/data-platform-containers/spark-operator:${{ github.event.inputs.operator_version }}-spark${{ github.event.inputs.spark_image }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: GoogleCloudPlatform/spark-on-k8s-operator
+          ref: refs/tags/${{ github.event.inputs.operator_version }}
+          fetch-depth: 0
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: ls -l
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          build-args: |
+            "SPARK_IMAGE=ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_image_tag }}"
+          tags: ghcr.io/khwj/data-platform-containers/spark-operator:${{ github.event.inputs.operator_version }}-spark${{ github.event.inputs.spark_image_tag }}
+          push: true
