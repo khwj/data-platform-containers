@@ -3,10 +3,10 @@ name: Spark with Hadoop
 on:
   workflow_dispatch:
     inputs:
-      spark_image:
-        description: "Spark base image"
+      spark_image_tag:
+        description: "Spark base image tag"
         required: true
-        default: "ghcr.io/khwj/data-platform-containers/spark:3.2.0-hive2.3.9-scala2.12-jdk11"
+        default: "3.2.0-hive2.3.9-scala2.12-jdk11"
       hadoop_version:
         description: "Hadoop version"
         required: true
@@ -14,7 +14,7 @@ on:
 
 jobs:
   publish_docker:
-    name: "Build ${{ github.event.inputs.spark_image }}-hadoop${{ github.event.inputs.hadoop_version }}"
+    name: "Build ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_image_tag }}-hadoop${{ github.event.inputs.hadoop_version }}"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,7 +32,7 @@ jobs:
           context: ./spark
           file: ./spark/Dockerfile.hadoop
           build-args: |
-            "SPARK_IMAGE=${{ github.event.inputs.spark_image }}"
+            "SPARK_IMAGE_TAG=${{ github.event.inputs.spark_image_tag }}"
             "HADOOP_VERSION=${{ github.event.inputs.hadoop_version }}"
-          tags: ${{ github.event.inputs.spark_image }}-hadoop${{ github.event.inputs.hadoop_version }}
+          tags: ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_image_tag }}-hadoop${{ github.event.inputs.hadoop_version }}
           push: true

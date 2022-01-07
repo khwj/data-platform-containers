@@ -1,10 +1,12 @@
-FROM curlimages/curl:7.81.0 as downloader
-# Download and extract the Hadoop binary package
-RUN curl -sL https://archive.apache.org/dist/hadoop/core/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
-     -o hadoop.tar.gz
+ARG SPARK_IMAGE_TAG=3.2.0-hive2.3.9-scala2.12-jdk11
 
-ARG SPARK_IMAGE=ghcr.io/khwj/data-platform-containers/spark:3.2.0-hive2.3.9-scala2.12-jdk11
-FROM ${SPARK_IMAGE}
+FROM ghcr.io/khwj/data-platform-containers/spark:${SPARK_IMAGE_TAG}
+
+USER root
+RUN apt-get update && \
+    apt-get install -y curl --no-install-recommends && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG HADOOP_VERSION=3.3.1
 
@@ -12,13 +14,11 @@ ENV HADOOP_HOME="/opt/hadoop"
 ENV HADOOP_CLASSPATH="${HADOOP_HOME}/share/hadoop/tools/lib/*:"
 ENV PATH="${HADOOP_HOME}/bin:${HADOOP_HOME}/share/hadoop/tools/lib/:${PATH}"
 
-COPY --from=downloader hadoop.tar.gz hadoop.tar.gz
-
-USER root
-RUN tar xz -C ${HADOOP_HOME} hadoop.tar.gz  \
+RUN curl -s https://archive.apache.org/dist/hadoop/core/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
+        | tar xz -C /opt/  \
+    && mv ${HADOOP_HOME}-${HADOOP_VERSION} ${HADOOP_HOME} \
     && mkdir -p /opt/spark/conf \
     && echo "export SPARK_DIST_CLASSPATH=\"$($HADOOP_HOME/bin/hadoop classpath)\"" > /opt/spark/conf/spark-env.sh \
-    && rm -r ${HADOOP_HOME}/share/doc hadoop.tar.gz \
     # Add S3a jars to the Hadoop classpath
     && cp ${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-aws* ${HADOOP_HOME}/share/hadoop/common/lib/ \
     && cp ${HADOOP_HOME}/share/hadoop/tools/lib/aws-java-sdk* ${HADOOP_HOME}/share/hadoop/common/lib/
