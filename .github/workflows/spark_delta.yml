@@ -1,0 +1,43 @@
+name: Spark with Delta
+
+on:
+  workflow_dispatch:
+    inputs:
+      spark_image_tag:
+        description: "Spark base image tag"
+        required: true
+        default: "3.2.0-hive2.3.9-scala2.12-jdk11-hadoop3.3.1"
+      delta_version:
+        description: "Delta version"
+        required: true
+        default: "1.1.0"
+      jdk_version:
+        description: "JDK version"
+        required: true
+        default: "11"
+
+jobs:
+  publish_docker:
+    name: "Build ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_image_tag }}-delta${{ github.event.inputs.delta_version }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./spark
+          file: ./spark/Dockerfile.delta
+          build-args: |
+            "SPARK_IMAGE_TAG=${{ github.event.inputs.spark_image_tag }}"
+            "DELTA_VERSION=${{ github.event.inputs.delta_version }}"
+            "JDK_VERSION=${{ github.event.inputs.jdk_version }}"
+          tags: ghcr.io/khwj/data-platform-containers/spark:${{ github.event.inputs.spark_image_tag }}-delta${{ github.event.inputs.delta_version }}
+          push: true
