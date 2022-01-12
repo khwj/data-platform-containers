@@ -12,7 +12,7 @@ ARG HADOOP_VERSION=3.3.1
 
 ENV HADOOP_HOME="/opt/hadoop"
 ENV HADOOP_CLASSPATH="${HADOOP_HOME}/share/hadoop/tools/lib/*:"
-ENV PATH="${HADOOP_HOME}/bin:${HADOOP_HOME}/share/hadoop/tools/lib/:${PATH}"
+ENV PATH="${SPARK_HOME}/bin:${SPARK_HOME}/sbin:${HADOOP_HOME}/bin:${HADOOP_HOME}/share/hadoop/tools/lib/:${PATH}"
 
 RUN curl -s https://archive.apache.org/dist/hadoop/core/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
         | tar xz -C /opt/  \
