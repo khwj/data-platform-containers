@@ -1,10 +1,10 @@
-ARG SPARK_TAG=3.2.0-hive2.3.9-java11-scala2.12-hadoop3.3.1
-ARG JDK_VERISON=11
-FROM maven:3.8-jdk-${JDK_VERISON} as maven
+ARG JDK_VERSION
+ARG SPARK_IMAGE_TAG
+FROM maven:3.8-jdk-${JDK_VERSION} as maven
 
-ARG DELTA_VERSION=1.1.0
+ARG DELTA_VERSION
 COPY delta.xml delta.xml
 RUN mvn --file=delta.xml dependency:copy-dependencies -Ddelta.version=${DELTA_VERSION} -DoutputDirectory=jars
 
-FROM ghcr.io/khwj/data-platform-containers/spark:${SPARK_TAG}
+FROM ghcr.io/khwj/data-platform-containers/spark:${SPARK_IMAGE_TAG}
 COPY --from=maven jars/* /opt/spark/jars/

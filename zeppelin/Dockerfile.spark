@@ -1,7 +1,7 @@
-ARG SPARK_IMAGE=ghcr.io/khwj/data-platform-containers/spark:3.1.2-hive2.3.9-scala2.12-jdk8-hadoop3.3.1
+ARG SPARK_IMAGE_TAG=3.1.2-hive2.3.9-scala2.12-jdk8-hadoop3.3.1
 ARG ZEPPELIN_VERSION=0.10.0
 
-FROM ${SPARK_IMAGE} as spark
+FROM ghcr.io/khwj/data-platform-containers/spark:${SPARK_IMAGE_TAG} as spark
 
 FROM apache/zeppelin:${ZEPPELIN_VERSION}
 COPY --from=spark /opt/spark /opt/spark
