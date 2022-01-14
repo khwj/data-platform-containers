@@ -1,0 +1,38 @@
+name: Metabase with Dremio Driver
+
+on:
+  workflow_dispatch:
+    inputs:
+      metabase_version:
+        description: "Metabase version"
+        required: true
+        default: "0.41.5"
+      dremio_driver_version:
+        description: "Dremio driver version"
+        required: true
+        default: "1.0.3"
+
+jobs:
+  publish_docker:
+    name: "Build ghcr.io/khwj/data-platform-containers/metabase:${{ github.event.inputs.metabase_version }}-dremio${{ github.event.inputs.dremio_connector_version }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./metabase
+          file: ./metabase/Dockerfile.dremio
+          build-args: |
+            "METABASE_VERSION=${{ github.event.inputs.metabase_version }}"
+            "DREMIO_DRIVER_VERSION=${{ github.event.inputs.dremio_driver_version }}"
+          tags: ghcr.io/khwj/data-platform-containers/metabase:${{ github.event.inputs.metabase_version }}-dremio${{ github.event.inputs.dremio_driver_version }}
+          push: true

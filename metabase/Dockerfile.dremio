@@ -1,0 +1,9 @@
+ARG METABASE_VERSION
+
+FROM alpine/curl AS downloader
+ARG DREMIO_DRIVER_VERSION
+RUN curl -L https://github.com/Baoqi/metabase-dremio-driver/releases/download/$DREMIO_DRIVER_VERSION/dremio.metabase-driver.jar \
+      -o dremio.metabase-driver.jar
+
+FROM metabase/metabase:v$METABASE_VERSION
+COPY --from=downloader dremio.metabase-driver.jar /plugins/dremio.metabase-driver.jar
